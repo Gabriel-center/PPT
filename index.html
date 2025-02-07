@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pedra Papel Tesoura</title>
+  <style>
+    /* Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    
+    #game-container {
+      width: 90%;
+      max-width: 400px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      padding: 20px;
+      position: relative;
+    }
+    
+    h1 {
+      margin-bottom: 10px;
+      font-size: 24px;
+      color: #333;
+    }
+    
+    #score {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #555;
+    }
+    
+    #message {
+      font-size: 16px;
+      margin: 15px 0;
+      min-height: 24px;
+      color: #666;
+      transition: opacity 0.5s ease;
+    }
+    
+    .btn-container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+    
+    .move-btn {
+      font-size: 40px;
+      background: #e7e7e7;
+      border: none;
+      border-radius: 50%;
+      width: 70px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    
+    .move-btn:active {
+      transform: scale(0.9);
+    }
+    
+    /* Tela final */
+    #final-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #fff;
+      font-size: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+    
+    #final-screen.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    /* Animação de fade-in */
+    .fade-in {
+      opacity: 0;
+      animation: fadeIn 0.5s forwards;
+    }
+    
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <h1>Pedra Papel Tesoura</h1>
+    <div id="score">Will: 0 - Jojo: 0</div>
+    <div id="message"></div>
+    <div class="btn-container">
+      <button class="move-btn" data-move="👊">👊</button>
+      <button class="move-btn" data-move="🖐️">🖐️</button>
+      <button class="move-btn" data-move="✌️">✌️</button>
+    </div>
+    <div id="final-screen"></div>
+  </div>
+
+  <script>
+    // Sequência predeterminada dos movimentos de Jojo
+    const jojoSequence = ["🖐️", "👊", "✌️", "✌️", "👊", "✌️", "🖐️", "🖐️", "✌️", "👊"];
+    let currentIndex = 0;
+    
+    // Contadores de pontos
+    let willWins = 0;
+    let jojoWins = 0;
+    
+    // Melhor de 3: quem ganhar 2 primeiro vence
+    const winThreshold = 2;
+    
+    // Elementos do DOM
+    const scoreDisplay = document.getElementById('score');
+    const messageDisplay = document.getElementById('message');
+    const finalScreen = document.getElementById('final-screen');
+    const buttons = document.querySelectorAll('.move-btn');
+    
+    // Determina o resultado da rodada
+    function getResult(player, jojo) {
+      if (player === jojo) {
+        return "empate";
+      }
+      if ((player === "👊" && jojo === "✌️") ||
+          (player === "🖐️" && jojo === "👊") ||
+          (player === "✌️" && jojo === "🖐️")) {
+        return "vitória";
+      }
+      return "derrota";
+    }
+    
+    // Atualiza a pontuação
+    function updateScore() {
+      scoreDisplay.textContent = `Will: ${willWins} - Jojo: ${jojoWins}`;
+    }
+    
+    // Exibe uma mensagem temporária
+    function showMessage(text) {
+      messageDisplay.textContent = text;
+      messageDisplay.classList.remove('fade-in');
+      void messageDisplay.offsetWidth;
+      messageDisplay.classList.add('fade-in');
+    }
+    
+    // Finaliza o jogo e exibe o resultado
+    function endGame() {
+      buttons.forEach(btn => btn.disabled = true);
+      if (willWins === winThreshold) {
+        finalScreen.textContent = "Will venceu o jogo!";
+      } else {
+        finalScreen.textContent = "Jojo venceu o jogo!";
+      }
+      finalScreen.classList.add('show');
+    }
+    
+    // Joga uma rodada ao clicar em um botão
+    function playRound(playerMove) {
+      if (willWins === winThreshold || jojoWins === winThreshold) return;
+      
+      let jojoMove = jojoSequence[currentIndex];
+      currentIndex = (currentIndex + 1) % jojoSequence.length;
+      
+      let result = getResult(playerMove, jojoMove);
+      
+      if (result === "empate") {
+        showMessage(`Empate! Ambos escolheram ${playerMove}. Jogue novamente.`);
+        return;
+      }
+      
+      if (result === "vitória") {
+        willWins++;
+        showMessage(`Você venceu! ${playerMove} ganha de ${jojoMove}.`);
+      } else {
+        jojoWins++;
+        showMessage(`Você perdeu! ${jojoMove} ganha de ${playerMove}.`);
+      }
+      
+      updateScore();
+      
+      if (willWins === winThreshold || jojoWins === winThreshold) {
+        setTimeout(endGame, 1000);
+      }
+    }
+    
+    // Adiciona evento aos botões
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        const move = button.getAttribute('data-move');
+        playRound(move);
+      });
+    });
+  </script>
+</body>
+</html>
